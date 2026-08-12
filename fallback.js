@@ -168,7 +168,7 @@ const FallbackGame = (() => {
   const init = (target) => {
     container = target;
     if(!container) return;
-    container.id = 'fallbackScene';
+    container.id = 'fallbackGame';
     container.classList.add('fallback-ui');
     container.innerHTML = `
       <div class="fallback-panel">

@@ -2,7 +2,7 @@
    fallback.css  ·  Styles for non-WebGL fallback game UI
 ═══════════════════════════════════════════════════════════════════ */
 
-#fallbackScene.fallback-ui{
+#fallbackRoot.fallback-ui{
   position:fixed;inset:0;z-index:9998;
   background:radial-gradient(circle at top, rgba(108,99,255,.16), rgba(7,7,15,.98));
   display:flex;align-items:center;justify-content:center;

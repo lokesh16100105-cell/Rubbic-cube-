@@ -31,11 +31,6 @@ const UI = (() => {
       fallbackRoot.id = 'fallbackRoot';
       document.body.appendChild(fallbackRoot);
       FallbackGame.init(fallbackRoot);
-      document.getElementById('topNav').style.display = 'none';
-      document.getElementById('leftPanel').style.display = 'none';
-      document.getElementById('rightPanel').style.display = 'none';
-      document.getElementById('statusBar').style.display = 'none';
-      document.getElementById('gesturePanel')?.classList?.add('hidden');
       document.getElementById('loading').classList.add('out');
     }
   };

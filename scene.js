@@ -18,7 +18,14 @@ const Scene3D = (() => {
     const canvas = document.getElementById('c');
 
     /* ── Renderer ── */
-    renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
+    const context = canvas.getContext('webgl2', { antialias:true, powerPreference:'high-performance' })
+                 || canvas.getContext('webgl',  { antialias:true, powerPreference:'high-performance' });
+    if(!context){
+      _showWebGLError();
+      throw new Error('WebGL is not supported by this browser.');
+    }
+
+    renderer = new THREE.WebGLRenderer({ canvas, context, antialias:true, powerPreference:'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled  = true;
@@ -201,8 +208,37 @@ const Scene3D = (() => {
     const w = window.innerWidth, h = window.innerHeight;
     camera.aspect = w/h;
     camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    if(renderer){
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    }
+  };
+
+  const _showWebGLError = () => {
+    const root = document.body;
+    const overlay = document.createElement('div');
+    overlay.id = 'webglErrorOverlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.background = 'rgba(0,0,0,0.95)';
+    overlay.style.color = '#fff';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.padding = '24px';
+    overlay.style.textAlign = 'center';
+    overlay.style.zIndex = '9999';
+    overlay.innerHTML = `
+      <div style="max-width:560px;">
+        <h1 style="font-size:2rem;margin-bottom:0.75rem;">WebGL unavailable</h1>
+        <p style="font-size:1rem;line-height:1.6;">Your browser or device does not support WebGL. Please use a modern browser such as Chrome, Edge, Firefox, or Safari, and make sure hardware acceleration is enabled.</p>
+        <p style="margin-top:1.25rem;font-size:0.95rem;opacity:0.82;">If you are testing on mobile, use a desktop browser for the full 3D experience.</p>
+      </div>
+    `;
+    root.appendChild(overlay);
   };
 
   const setThemeColors = (accent) => {

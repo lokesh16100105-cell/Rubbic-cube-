@@ -14,34 +14,42 @@ const _setLoad = (pct, msg) => {
 /* ══════════════════════════════════════
    BOOT SEQUENCE
 ══════════════════════════════════════ */
+let useFallbackMode = false;
+
 const boot = async () => {
 
   _setLoad(10, 'Initializing renderer…');
   await _frame();
 
-  /* 1. Init Three.js scene */
+  /* 1. Try Three.js scene */
   const sceneData = Scene3D.init();
-  if(!sceneData){
-    _setLoad(100, 'WebGL unavailable');
+  useFallbackMode = !sceneData;
+
+  if(useFallbackMode){
+    _setLoad(25, 'Starting fallback mode…');
+    await _frame();
     document.getElementById('loading').classList.add('out');
-    return;
   }
-  const { renderer, scene, camera } = sceneData;
-  _setLoad(30, 'Building scene…');
-  await _frame();
 
-  /* 2. Build Rubik's Cube */
-  const cubeGroup = Cube.init(scene);
-  _setLoad(55, 'Assembling cube…');
-  await _frame();
+  let cubeGroup = null;
+  if(!useFallbackMode){
+    const { renderer, scene, camera } = sceneData;
+    _setLoad(30, 'Building scene…');
+    await _frame();
 
-  /* 3. Init controls */
-  Controls.init(camera, renderer, cubeGroup);
-  _setLoad(70, 'Setting up controls…');
-  await _frame();
+    /* 2. Build Rubik's Cube */
+    cubeGroup = Cube.init(scene);
+    _setLoad(55, 'Assembling cube…');
+    await _frame();
+
+    /* 3. Init controls */
+    Controls.init(camera, renderer, cubeGroup);
+    _setLoad(70, 'Setting up controls…');
+    await _frame();
+  }
 
   /* 4. Init UI */
-  UI.init();
+  UI.init(useFallbackMode);
   _setLoad(80, 'Loading UI…');
   await _frame();
 
@@ -83,7 +91,9 @@ const boot = async () => {
 ══════════════════════════════════════ */
 const _loop = (timestamp = 0) => {
   requestAnimationFrame(_loop);
-  Scene3D.render(timestamp);
+  if(!useFallbackMode){
+    Scene3D.render(timestamp);
+  }
   UI.updateHUD();
 };
 

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Rubik's Cube 3D</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body data-theme="dark">
+
+  <!-- THREE.JS CANVAS -->
+  <canvas id="c"></canvas>
+
+  <!-- ═══════════════════════════════════════════
+       LOADING SCREEN
+  ═══════════════════════════════════════════ -->
+  <div id="loading">
+    <div class="ld-inner">
+      <div class="ld-cube">
+        <div class="ld-face f"></div><div class="ld-face bk"></div>
+        <div class="ld-face l"></div><div class="ld-face r"></div>
+        <div class="ld-face t"></div><div class="ld-face bt"></div>
+      </div>
+      <h1 class="ld-title">RUBIK'S CUBE <span>3D</span></h1>
+      <div class="ld-bar"><div class="ld-fill" id="ldFill"></div></div>
+      <p class="ld-msg" id="ldMsg">Initializing engine…</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TOP NAV
+  ═══════════════════════════════════════════ -->
+  <nav id="topNav">
+    <div class="nav-brand">
+      <span class="brand-icon">🧊</span>
+      <span class="brand-name">RUBIK'S <em>3D</em></span>
+    </div>
+    <div class="nav-hud">
+      <div class="hud-pill" id="hudTimer">
+        <span class="hp-lbl">TIME</span>
+        <span class="hp-val" id="timerVal">00:00</span>
+      </div>
+      <div class="hud-pill" id="hudMoves">
+        <span class="hp-lbl">MOVES</span>
+        <span class="hp-val" id="movesVal">0</span>
+      </div>
+      <div class="hud-pill" id="hudBest">
+        <span class="hp-lbl">BEST</span>
+        <span class="hp-val" id="bestVal">--:--</span>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <button class="icon-btn" id="btnFullscreen" title="Fullscreen">⛶</button>
+      <button class="icon-btn" id="btnMute"       title="Mute/Unmute">🔊</button>
+      <button class="icon-btn" id="btnSettings"   title="Settings">⚙</button>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       LEFT PANEL
+  ═══════════════════════════════════════════ -->
+  <aside id="leftPanel">
+    <!-- Controls -->
+    <section class="ps">
+      <h3 class="ps-title">CONTROLS</h3>
+      <button class="abtn primary" id="btnScramble">🔀 Scramble</button>
+      <button class="abtn success" id="btnSolve">✨ Auto Solve</button>
+      <button class="abtn warning" id="btnReset">↺ Reset</button>
+    </section>
+
+    <!-- History -->
+    <section class="ps">
+      <h3 class="ps-title">HISTORY</h3>
+      <div class="row2">
+        <button class="abtn sm" id="btnUndo">⟵ Undo</button>
+        <button class="abtn sm" id="btnRedo">Redo ⟶</button>
+      </div>
+      <div class="move-hist" id="moveHist"></div>
+    </section>
+
+    <!-- Camera -->
+    <section class="ps">
+      <h3 class="ps-title">CAMERA</h3>
+      <button class="abtn sm toggle" id="btnAutoRot">🔄 Auto Rotate</button>
+      <button class="abtn sm" id="btnResetCam">📷 Reset View</button>
+    </section>
+
+    <!-- Theme -->
+    <section class="ps">
+      <h3 class="ps-title">THEME</h3>
+      <div class="theme-grid" id="themeGrid">
+        <button class="tbtn active" data-theme="dark"      title="Dark">🌑</button>
+        <button class="tbtn"        data-theme="neon"      title="Neon">💜</button>
+        <button class="tbtn"        data-theme="cyberpunk" title="Cyberpunk">🟡</button>
+        <button class="tbtn"        data-theme="glass"     title="Glass">🔵</button>
+        <button class="tbtn"        data-theme="gold"      title="Gold">🟠</button>
+        <button class="tbtn"        data-theme="classic"   title="Classic">⚪</button>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════
+       RIGHT PANEL
+  ═══════════════════════════════════════════ -->
+  <aside id="rightPanel">
+    <!-- Stats -->
+    <section class="ps">
+      <h3 class="ps-title">STATISTICS</h3>
+      <div class="stat-grid">
+        <div class="sg-item"><span class="sg-lbl">Played</span><span class="sg-val" id="stPlayed">0</span></div>
+        <div class="sg-item"><span class="sg-lbl">Won</span><span class="sg-val" id="stWon">0</span></div>
+        <div class="sg-item"><span class="sg-lbl">Avg Time</span><span class="sg-val" id="stAvgT">--:--</span></div>
+        <div class="sg-item"><span class="sg-lbl">Avg Moves</span><span class="sg-val" id="stAvgM">--</span></div>
+        <div class="sg-item"><span class="sg-lbl">Best</span><span class="sg-val" id="stBest">--:--</span></div>
+        <div class="sg-item"><span class="sg-lbl">Total Moves</span><span class="sg-val" id="stTotal">0</span></div>
+      </div>
+    </section>
+
+    <!-- Achievements -->
+    <section class="ps">
+      <h3 class="ps-title">ACHIEVEMENTS</h3>
+      <div class="ach-list">
+        <div class="ach locked" id="achFirst"><span class="ach-ico">🏆</span><div><b>First Solve</b><small>Complete the cube</small></div></div>
+        <div class="ach locked" id="achCent"> <span class="ach-ico">💯</span><div><b>Century</b><small>Make 100 moves</small></div></div>
+        <div class="ach locked" id="achFast"> <span class="ach-ico">⚡</span><div><b>Speed Solver</b><small>Solve under 2 min</small></div></div>
+        <div class="ach locked" id="achPerf"> <span class="ach-ico">⭐</span><div><b>Perfect</b><small>Solve in ≤30 moves</small></div></div>
+      </div>
+    </section>
+
+    <!-- Keyboard guide -->
+    <section class="ps">
+      <h3 class="ps-title">KEYBOARD</h3>
+      <div class="kb-guide">
+        <div class="kb-row"><kbd>R</kbd><span>Right</span><kbd>Shift+R</kbd><span>R'</span></div>
+        <div class="kb-row"><kbd>L</kbd><span>Left</span><kbd>Shift+L</kbd><span>L'</span></div>
+        <div class="kb-row"><kbd>U</kbd><span>Up</span><kbd>Shift+U</kbd><span>U'</span></div>
+        <div class="kb-row"><kbd>D</kbd><span>Down</span><kbd>Shift+D</kbd><span>D'</span></div>
+        <div class="kb-row"><kbd>F</kbd><span>Front</span><kbd>Shift+F</kbd><span>F'</span></div>
+        <div class="kb-row"><kbd>B</kbd><span>Back</span><kbd>Shift+B</kbd><span>B'</span></div>
+        <div class="kb-row"><kbd>Z</kbd><span>Undo</span><kbd>Y</kbd><span>Redo</span></div>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════
+       BOTTOM STATUS BAR
+  ═══════════════════════════════════════════ -->
+  <div id="statusBar">
+    <div class="sb-item"><span class="sb-lbl">FPS</span><span class="sb-val" id="sbFps">60</span></div>
+    <div class="sb-item"><span class="sb-lbl">STATE</span><span class="sb-val" id="sbState">SOLVED</span></div>
+    <div class="sb-item"><span class="sb-lbl">LAST MOVE</span><span class="sb-val" id="sbMove">--</span></div>
+    <div class="sb-item"><span class="sb-lbl">CAMERA</span><span class="sb-val" id="sbCam">45°</span></div>
+    <div class="sb-item solver-ctrl hidden" id="solverCtrl">
+      <button class="mini-btn" id="sBtnPrev">⏮</button>
+      <button class="mini-btn" id="sBtnPlay">▶</button>
+      <button class="mini-btn" id="sBtnNext">⏭</button>
+      <span class="sb-val" id="sBtnStep">0/0</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SETTINGS MODAL
+  ═══════════════════════════════════════════ -->
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-bg"></div>
+    <div class="modal-box">
+      <div class="modal-hdr"><h2>SETTINGS</h2><button class="modal-x" id="closeSettings">✕</button></div>
+      <div class="modal-body">
+        <div class="sg"><label>Animation Speed</label><input type="range" id="sSpeed" min="1" max="10" value="5"/><span id="sSpeedV">5</span></div>
+        <div class="sg"><label>Bloom Intensity</label><input type="range" id="sBloom" min="0" max="10" value="3"/><span id="sBloomV">3</span></div>
+        <div class="sg"><label>Music Volume</label>   <input type="range" id="sMusic" min="0" max="10" value="3"/><span id="sMusicV">3</span></div>
+        <div class="sg"><label>Sound Volume</label>   <input type="range" id="sSound" min="0" max="10" value="7"/><span id="sSoundV">7</span></div>
+        <div class="sg"><label>Cam Sensitivity</label><input type="range" id="sCam"   min="1" max="10" value="5"/><span id="sCamV">5</span></div>
+        <div class="sg tg"><label>Particles</label><label class="sw"><input type="checkbox" id="sParticles" checked/><span class="sw-sl"></span></label></div>
+        <div class="sg tg"><label>Shadows</label>  <label class="sw"><input type="checkbox" id="sShadows"   checked/><span class="sw-sl"></span></label></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       VICTORY MODAL
+  ═══════════════════════════════════════════ -->
+  <div class="modal hidden" id="victoryModal">
+    <div class="modal-bg"></div>
+    <div class="modal-box victory-box">
+      <div class="vp-wrap" id="vpWrap"></div>
+      <h1 class="v-title">SOLVED!</h1>
+      <div class="v-stats">
+        <div class="vs-item"><span class="vs-lbl">Time</span><span class="vs-val" id="vTime">--:--</span></div>
+        <div class="vs-item"><span class="vs-lbl">Moves</span><span class="vs-val" id="vMoves">0</span></div>
+        <div class="vs-item"><span class="vs-lbl">Rating</span><span class="vs-val" id="vRating">⭐⭐⭐</span></div>
+      </div>
+      <div class="v-btns">
+        <button class="abtn primary" id="btnPlayAgain">Play Again</button>
+        <button class="abtn"         id="btnCloseVic">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- ═══════════════════════════════════════════
+       SCRIPTS — load order matters
+  ═══════════════════════════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.7/dist/handpose.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="utils.js"></script>
+  <script src="storage.js"></script>
+  <script src="audio.js"></script>
+  <script src="animations.js"></script>
+  <script src="cube.js"></script>
+  <script src="solver.js"></script>
+  <script src="controls.js"></script>
+  <script src="scene.js"></script>
+  <script src="ui.js"></script>
+  <script src="gesture.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

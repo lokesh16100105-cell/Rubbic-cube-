@@ -11,6 +11,12 @@ const Scene3D = (() => {
   let frameCount = 0, lastFpsTime = 0, fps = 60, lastTime = 0;
   let particlesEnabled = true;
 
+  let fallbackContainer = null;
+  let fallbackCube = null;
+  let fallbackAngle = { x: 22, y: 45 };
+  let fallbackDrag = { active:false, startX:0, startY:0, lastX:45, lastY:22 };
+  let canvasElement = null;
+
   /* ══════════════════════════════════════
      INIT
   ══════════════════════════════════════ */
@@ -33,6 +39,7 @@ const Scene3D = (() => {
       return null;
     }
 
+    canvasElement = canvas;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled  = true;
@@ -40,6 +47,8 @@ const Scene3D = (() => {
     renderer.toneMapping        = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
     renderer.outputEncoding      = THREE.sRGBEncoding;
+
+    _showCanvas();
 
     /* ── Scene ── */
     scene = new THREE.Scene();
@@ -211,6 +220,16 @@ const Scene3D = (() => {
   /* ══════════════════════════════════════
      RESIZE
   ══════════════════════════════════════ */
+  const _hideCanvas = () => {
+    if(!canvasElement) canvasElement = document.getElementById('c');
+    if(canvasElement) canvasElement.style.display = 'none';
+  };
+
+  const _showCanvas = () => {
+    if(!canvasElement) canvasElement = document.getElementById('c');
+    if(canvasElement) canvasElement.style.display = 'block';
+  };
+
   const _onResize = () => {
     const w = window.innerWidth, h = window.innerHeight;
     if(camera){
@@ -223,32 +242,78 @@ const Scene3D = (() => {
     }
   };
 
-  const _showWebGLError = () => {
-    if(document.getElementById('webglErrorOverlay')) return;
-    const root = document.body;
-    const overlay = document.createElement('div');
-    overlay.id = 'webglErrorOverlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.background = 'rgba(0,0,0,0.95)';
-    overlay.style.color = '#fff';
-    overlay.style.display = 'flex';
-    overlay.style.alignItems = 'center';
-    overlay.style.justifyContent = 'center';
-    overlay.style.padding = '24px';
-    overlay.style.textAlign = 'center';
-    overlay.style.zIndex = '9999';
-    overlay.innerHTML = `
-      <div style="max-width:560px;line-height:1.6;">
-        <h1 style="font-size:2rem;margin-bottom:0.75rem;">WebGL unavailable</h1>
-        <p style="font-size:1rem;">Your browser or device does not support WebGL. Please use a modern browser such as Chrome, Edge, Firefox, or Safari, and make sure hardware acceleration is enabled.</p>
-        <p style="margin-top:1.25rem;font-size:0.95rem;opacity:0.82;">If you are testing on mobile, use a desktop browser for the full 3D experience.</p>
+  const _bindFallbackEvents = () => {
+    if(!fallbackContainer) return;
+    const container = fallbackContainer.querySelector('#fallbackCubeContainer');
+    if(!container) return;
+
+    container.addEventListener('pointerdown', e => {
+      fallbackDrag.active = true;
+      fallbackDrag.startX = e.clientX;
+      fallbackDrag.startY = e.clientY;
+      container.setPointerCapture(e.pointerId);
+    });
+
+    container.addEventListener('pointermove', e => {
+      if(!fallbackDrag.active) return;
+      const dx = e.clientX - fallbackDrag.startX;
+      const dy = e.clientY - fallbackDrag.startY;
+      fallbackAngle.y = fallbackDrag.lastX + dx * 0.4;
+      fallbackAngle.x = Math.min(80, Math.max(-80, fallbackDrag.lastY + dy * 0.4));
+      _updateFallback();
+    });
+
+    container.addEventListener('pointerup', () => {
+      fallbackDrag.active = false;
+      fallbackDrag.lastX = fallbackAngle.y;
+      fallbackDrag.lastY = fallbackAngle.x;
+    });
+    container.addEventListener('pointercancel', () => {
+      fallbackDrag.active = false;
+      fallbackDrag.lastX = fallbackAngle.y;
+      fallbackDrag.lastY = fallbackAngle.x;
+    });
+  };
+
+  const _updateFallback = () => {
+    if(!fallbackCube) return;
+    fallbackCube.style.transform = `rotateX(${fallbackAngle.x}deg) rotateY(${fallbackAngle.y}deg)`;
+  };
+
+  const _createFallback = () => {
+    if(fallbackContainer) return;
+    fallbackContainer = document.createElement('div');
+    fallbackContainer.id = 'fallbackScene';
+    fallbackContainer.innerHTML = `
+      <div id="fallbackContent">
+        <div id="fallbackCubeContainer">
+          <div id="fallbackCube">
+            <div class="fallbackFace front"></div>
+            <div class="fallbackFace back"></div>
+            <div class="fallbackFace left"></div>
+            <div class="fallbackFace right"></div>
+            <div class="fallbackFace top"></div>
+            <div class="fallbackFace bottom"></div>
+          </div>
+        </div>
+        <div id="fallbackText">
+          <h1>WebGL unavailable</h1>
+          <p>Your browser does not support WebGL, but you can still rotate the cube with touch or drag gestures.</p>
+          <p>Use a modern browser on desktop or mobile for the full 3D experience.</p>
+        </div>
       </div>
     `;
-    root.appendChild(overlay);
+    document.body.appendChild(fallbackContainer);
+    fallbackCube = fallbackContainer.querySelector('#fallbackCube');
+    _updateFallback();
+    _bindFallbackEvents();
+  };
+
+  const _showWebGLError = () => {
+    _hideCanvas();
+    _createFallback();
+    const loading = document.getElementById('loading');
+    if(loading) loading.classList.add('out');
   };
 
   const setThemeColors = (accent) => {

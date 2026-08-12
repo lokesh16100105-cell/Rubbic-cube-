@@ -20,7 +20,13 @@ const boot = async () => {
   await _frame();
 
   /* 1. Init Three.js scene */
-  const { renderer, scene, camera } = Scene3D.init();
+  const sceneData = Scene3D.init();
+  if(!sceneData){
+    _setLoad(100, 'WebGL unavailable');
+    document.getElementById('loading').classList.add('out');
+    return;
+  }
+  const { renderer, scene, camera } = sceneData;
   _setLoad(30, 'Building scene…');
   await _frame();
 

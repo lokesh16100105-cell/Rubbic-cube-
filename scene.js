@@ -22,10 +22,17 @@ const Scene3D = (() => {
                  || canvas.getContext('webgl',  { antialias:true, powerPreference:'high-performance' });
     if(!context){
       _showWebGLError();
-      throw new Error('WebGL is not supported by this browser.');
+      return null;
     }
 
-    renderer = new THREE.WebGLRenderer({ canvas, context, antialias:true, powerPreference:'high-performance' });
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, context, antialias:true, powerPreference:'high-performance' });
+    } catch(error){
+      console.error('WebGLRenderer initialization failed:', error);
+      _showWebGLError();
+      return null;
+    }
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled  = true;
@@ -206,8 +213,10 @@ const Scene3D = (() => {
   ══════════════════════════════════════ */
   const _onResize = () => {
     const w = window.innerWidth, h = window.innerHeight;
-    camera.aspect = w/h;
-    camera.updateProjectionMatrix();
+    if(camera){
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+    }
     if(renderer){
       renderer.setSize(w, h);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -215,6 +224,7 @@ const Scene3D = (() => {
   };
 
   const _showWebGLError = () => {
+    if(document.getElementById('webglErrorOverlay')) return;
     const root = document.body;
     const overlay = document.createElement('div');
     overlay.id = 'webglErrorOverlay';
@@ -232,9 +242,9 @@ const Scene3D = (() => {
     overlay.style.textAlign = 'center';
     overlay.style.zIndex = '9999';
     overlay.innerHTML = `
-      <div style="max-width:560px;">
+      <div style="max-width:560px;line-height:1.6;">
         <h1 style="font-size:2rem;margin-bottom:0.75rem;">WebGL unavailable</h1>
-        <p style="font-size:1rem;line-height:1.6;">Your browser or device does not support WebGL. Please use a modern browser such as Chrome, Edge, Firefox, or Safari, and make sure hardware acceleration is enabled.</p>
+        <p style="font-size:1rem;">Your browser or device does not support WebGL. Please use a modern browser such as Chrome, Edge, Firefox, or Safari, and make sure hardware acceleration is enabled.</p>
         <p style="margin-top:1.25rem;font-size:0.95rem;opacity:0.82;">If you are testing on mobile, use a desktop browser for the full 3D experience.</p>
       </div>
     `;
@@ -242,7 +252,7 @@ const Scene3D = (() => {
   };
 
   const setThemeColors = (accent) => {
-    ambientLight.color.set(0xffffff);
+    if(ambientLight) ambientLight.color.set(0xffffff);
   };
 
   const setBloom = v => {};
